@@ -88,7 +88,10 @@
     font-family: 'Malgun Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
-    overflow-y: auto;
+    /* body 자체는 스크롤하지 않는다 — 대신 #app이 타이틀바 아래 영역만 차지하고
+       그 안에서 스크롤되게 해서, 스크롤바가 고정된 타이틀바 위까지 겹쳐 보이지
+       않게 한다(아래 #app 규칙 참고). */
+    overflow: hidden;
   }
 
   .app-titlebar {
@@ -112,7 +115,65 @@
     user-select: none;
     flex-shrink: 0;
   }
-  #app { padding-top: var(--titlebar-h); }
+  /* 타이틀바(고정) 높이만큼 아래로 내려서 시작하고, 그 아래 영역(뷰포트 - 타이틀바
+     높이)만 자체적으로 스크롤한다 — padding 대신 margin+height로 실제 박스 자체를
+     타이틀바 아래에서 시작하게 해야, 스크롤바가 그 박스 높이만큼만 그려져서
+     타이틀바 위로 겹쳐 보이지 않는다. */
+  #app {
+    margin-top: var(--titlebar-h);
+    height: calc(100vh - var(--titlebar-h));
+    overflow-y: auto;
+    /* Firefox: 스크롤바 색을 테마의 강조색(--accent-gold)에 연동한다. 이 변수는
+       테마 색을 바꿀 때마다 JS가 :root에 갱신해주므로 스크롤바도 같이 따라간다. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-gold) transparent;
+  }
+  /* Chromium/WebKit(Electron 포함): 트랙은 투명하게, 손잡이만 테마 강조색으로
+     둥글게 그려서 튀지 않으면서도 테마색을 따라가게 한다. */
+  #app::-webkit-scrollbar { width: 10px; }
+  #app::-webkit-scrollbar-track { background: transparent; }
+  #app::-webkit-scrollbar-thumb {
+    background-color: var(--accent-gold);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  #app::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent-gold-dark);
+    background-clip: padding-box;
+  }
+
+  /* 맨 위로 버튼: 평소엔 숨겨뒀다가(opacity+살짝 아래) 일정 이상 스크롤하면
+     보여준다(JS가 .visible을 토글). 뷰포트 기준 고정이라 #app이 스크롤돼도
+     항상 화면 우측 하단에 머문다. */
+  .scroll-top-btn {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--accent-gold);
+    color: var(--accent-ink-solid);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    z-index: 500;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity .15s ease, transform .15s ease, visibility .15s;
+  }
+  .scroll-top-btn.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+  .scroll-top-btn:hover { background: var(--accent-gold-dark); }
+  .scroll-top-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+  @media (max-width: 700px) {
+    .scroll-top-btn { right: 14px; bottom: 14px; width: 38px; height: 38px; }
+  }
   .app-titlebar-mark { width: 20px; height: 20px; flex-shrink: 0; }
   .app-titlebar-text { letter-spacing: 0.02em; }
 
@@ -132,8 +193,10 @@
     padding: 20px 0;
     background: var(--card);
     border-right: 1px solid var(--border);
+    /* #app이 이제 자체적으로 스크롤되는 컨테이너라, sticky 기준이 body가 아니라
+       #app이 된다 — 그래서 top은 타이틀바 높이가 아니라 0이어야 한다. */
     position: sticky;
-    top: var(--titlebar-h);
+    top: 0;
     align-self: flex-start;
     height: calc(100vh - var(--titlebar-h));
   }
@@ -1937,6 +2000,11 @@
   <span class="app-titlebar-text">Tracker</span>
 </div>
 <div id="app"></div>
+<button type="button" id="scroll-top-btn" class="scroll-top-btn" aria-label="맨 위로" title="맨 위로">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M5 15 L12 8 L19 15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 <script>
 (function () {
   "use strict";
@@ -2387,7 +2455,7 @@
   // "__APP_VERSION__"을 그대로 찾아 바꾸는 단순 치환 스크립트가 이 판별용
   // 값까지 함께 바꿔버리는 일이 없도록 한다(그러면 항상 placeholder로
   // 오판되어 업데이트 감지가 영영 꺼져버린다).
-  var APP_VERSION = "1.0.0";
+  var APP_VERSION = "__APP_VERSION__";
   var APP_VERSION_PLACEHOLDER = "__APP_" + "VERSION__";
   var APP_VERSION_STORAGE_KEY = "angle-quest-app-version";
   // 화면 하단(사이드바)에 표시할 버전 문자열. 빌드 치환이 안 된 원본 파일을 그대로
@@ -8938,6 +9006,26 @@
 
   applyAccent();
   render();
+
+  // "맨 위로" 버튼: #app 자체는 render()가 매번 innerHTML을 통째로 교체해도
+  // #app 엘리먼트 자체와 이 버튼은 다시 만들어지지 않으므로, 리스너를 한 번만
+  // 걸어두면 계속 살아있다. 스크롤이 어느 정도 내려갔을 때만 보이게 하고,
+  // 클릭하면 #app(실제 스크롤 컨테이너)을 부드럽게 맨 위로 올린다.
+  (function initScrollTopBtn() {
+    var scrollEl = document.getElementById("app");
+    var btn = document.getElementById("scroll-top-btn");
+    if (!scrollEl || !btn) return;
+    var SHOW_AFTER = 240;
+    function updateVisibility() {
+      if (scrollEl.scrollTop > SHOW_AFTER) btn.classList.add("visible");
+      else btn.classList.remove("visible");
+    }
+    scrollEl.addEventListener("scroll", updateVisibility, { passive: true });
+    btn.addEventListener("click", function () {
+      scrollEl.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    updateVisibility();
+  })();
 })();
 </script>
 </body>
