@@ -36,7 +36,8 @@
       "preload.js",
       "icon.ico",
       "icon.icns",
-      "package.json"
+      "package.json",
+      "license-config.js"
     ],
     "win": {
       "target": [
