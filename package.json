@@ -1,0 +1,78 @@
+{
+  "name": "tracker",
+  "version": "1.1.4",
+  "description": "앵글 퀘스트 - 다양한 앵글 드로잉 연습 트래커",
+  "main": "main.js",
+  "author": "leti",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "sync-version": "node scripts/sync-version.js",
+    "prebuild": "npm run sync-version",
+    "predist": "npm run sync-version",
+    "prebuild:mac": "npm run sync-version",
+    "build": "electron-packager . Tracker --platform=win32 --arch=x64 --icon=icon.ico --overwrite --out=dist",
+    "dist": "electron-packager . Tracker --platform=win32 --arch=x64 --icon=icon.ico --overwrite --out=dist",
+    "build:mac": "electron-packager . Tracker --platform=darwin --arch=x64,arm64 --icon=icon.icns --overwrite --out=dist",
+    "predist:win": "npm run sync-version",
+    "dist:win": "electron-builder --win",
+    "predist:mac": "npm run sync-version",
+    "dist:mac": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^26.15.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.leti.tracker",
+    "productName": "Tracker",
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js",
+      "icon.ico",
+      "icon.icns",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName} Setup ${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "icon.icns",
+      "category": "public.app-category.graphics-design",
+      "identity": null
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    }
+  }
+}
