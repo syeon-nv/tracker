@@ -10,6 +10,16 @@ if (process.platform === "win32") {
   try { app.setAppUserModelId("com.leti.tracker"); } catch (e) {}
 }
 
+// 윈도우에서 설치 직후 자동 실행 + 바탕화면/시작메뉴 아이콘 실행이 겹치거나,
+// 시작프로그램 자동 실행과 사용자의 수동 실행이 겹치는 경우 등으로 앱 창이
+// 두 개 뜨는 문제가 있었다. Electron의 단일 인스턴스 락을 걸어서, 이미 앱이
+// 떠 있는 상태에서 또 실행되면 새 프로세스는 즉시 종료하고, 대신 기존 창을
+// 앞으로 가져오도록 한다.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
 let mainWindow = null;
 
 // 일기·포트폴리오를 포함한 앱 데이터를 저장하는 파일 경로.
@@ -34,6 +44,173 @@ ipcMain.on("storage-save", (event, json) => {
       fs.writeFileSync(getStorageFilePath(), json, "utf-8");
     }
   } catch (e) {}
+});
+
+// ── 시리얼키 + 기기 인증(라이선스) ──────────────────────────────────────
+// 별도 서버 없이, 비공개 깃허브 저장소에 있는 licenses.json 파일 하나를
+// "데이터베이스"로 써서 시리얼키당 최대 2대까지 기기를 등록/해제한다.
+// 보안이 아주 강할 필요는 없다는 전제(무단 배포를 어느 정도만 막으면
+// 충분)로 고른 가장 간단한 구조이며, 앱 안에 박아넣는 토큰이 유출되면
+// 이 제한은 우회될 수 있다는 걸 알고 쓰는 방식이다.
+//
+// 실제 값(토큰, 저장소 이름)은 이 파일에 직접 적지 않고 license-config.js
+// 라는 별도 파일에서 읽어온다. license-config.js는 .gitignore에 등록돼
+// 있어서 깃허브에(이 프로젝트를 올리는 저장소가 공개든 비공개든) 절대
+// 올라가지 않는다 — main.js는 앱 소스코드라 깃허브에 커밋해서 버전 관리를
+// 하게 되는데, 거기에 토큰을 그대로 적어두면 저장소를 볼 수 있는 사람
+// 누구나 그 토큰으로 licenses.json을 마음대로 읽고 쓸 수 있게 돼서
+// (시리얼키 제한 자체가 무의미해짐) 반드시 분리해야 한다.
+//
+// 처음 설정하는 법: license-config.example.js를 복사해서 "license-config.js"
+// 이름으로 저장하고, 그 안의 값들을 실제로 채워넣으면 된다(README 참고).
+// license-config.js가 아직 없으면(설정 전) 라이선스 기능은 조용히 꺼진
+// 채로 동작한다(인증 화면이 뜨지 않음) — 개발 중에 이 파일 없이도 앱
+// 자체는 정상적으로 켜져야 하므로 에러를 던지지 않는다.
+var licenseConfig = { GITHUB_TOKEN: "", LICENSE_REPO_OWNER: "", LICENSE_REPO_NAME: "" };
+try {
+  var loadedLicenseConfig = require("./license-config.js");
+  if (loadedLicenseConfig && typeof loadedLicenseConfig === "object") {
+    licenseConfig = Object.assign(licenseConfig, loadedLicenseConfig);
+  }
+} catch (eLicenseConfig) {
+  // license-config.js가 없거나 문법 오류가 있으면 라이선스 기능만 비활성화하고 넘어간다.
+}
+const GITHUB_TOKEN = licenseConfig.GITHUB_TOKEN;
+const LICENSE_REPO_OWNER = licenseConfig.LICENSE_REPO_OWNER;
+const LICENSE_REPO_NAME = licenseConfig.LICENSE_REPO_NAME;
+const LICENSE_FILE_PATH = "licenses.json";
+const MAX_DEVICES_PER_KEY = 2;
+function isLicenseConfigured() {
+  return !!(GITHUB_TOKEN && LICENSE_REPO_OWNER && LICENSE_REPO_NAME);
+}
+
+function getDeviceIdFilePath() {
+  return path.join(app.getPath("userData"), "device-id.txt");
+}
+
+// 이 컴퓨터를 구분하는 고유 ID. 한 번 만들면 사용자 데이터 폴더에 저장해두고
+// 계속 재사용한다(앱을 다시 설치해도 같은 폴더를 쓰는 한 유지된다).
+function getOrCreateDeviceId() {
+  try {
+    var p = getDeviceIdFilePath();
+    if (fs.existsSync(p)) {
+      var existing = fs.readFileSync(p, "utf-8").trim();
+      if (existing) return existing;
+    }
+    var id = require("crypto").randomUUID();
+    fs.writeFileSync(p, id, "utf-8");
+    return id;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function githubApiRequest(method, urlPath, body) {
+  var res = await fetch("https://api.github.com" + urlPath, {
+    method: method,
+    headers: {
+      "Authorization": "Bearer " + GITHUB_TOKEN,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json"
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  var data = null;
+  try { data = await res.json(); } catch (eParse) {}
+  return { ok: res.ok, status: res.status, data: data };
+}
+
+async function fetchLicenseFile() {
+  var r = await githubApiRequest("GET", "/repos/" + LICENSE_REPO_OWNER + "/" + LICENSE_REPO_NAME + "/contents/" + LICENSE_FILE_PATH);
+  if (!r.ok || !r.data || typeof r.data.content !== "string") {
+    throw new Error("license file fetch failed: " + r.status);
+  }
+  var content = Buffer.from(r.data.content, "base64").toString("utf-8");
+  return { json: JSON.parse(content), sha: r.data.sha };
+}
+
+async function writeLicenseFile(json, sha, message) {
+  var content = Buffer.from(JSON.stringify(json, null, 2), "utf-8").toString("base64");
+  return githubApiRequest("PUT", "/repos/" + LICENSE_REPO_OWNER + "/" + LICENSE_REPO_NAME + "/contents/" + LICENSE_FILE_PATH, {
+    message: message || "update licenses.json",
+    content: content,
+    sha: sha
+  });
+}
+
+// 시리얼키를 이 기기에 등록한다. 이미 등록돼 있으면(재실행 등) 그대로
+// 성공 처리하고, 등록된 기기가 이미 2대(MAX_DEVICES_PER_KEY)면 거절한다.
+// 렌더러가 시작하자마자(첫 화면을 그리기 전에) "라이선스 기능이 설정돼
+// 있는지"를 동기적으로 물어봐야 해서(비동기로 하면 그 사이 잠깐 앱이 그냥
+// 보여버림) sendSync를 쓴다. license-config.js를 아직 안 채워넣은
+// 상태에서는 항상 false를 돌려줘서, 인증 화면 자체가 뜨지 않게 한다
+// (설정 전인데 자기 자신이 잠겨버리는 걸 막기 위함).
+ipcMain.on("license-is-configured", (event) => {
+  event.returnValue = isLicenseConfigured();
+});
+
+ipcMain.handle("license-activate", async (event, serialKey) => {
+  try {
+    if (!isLicenseConfigured()) return { ok: false, reason: "not-configured" };
+    if (!serialKey || typeof serialKey !== "string") return { ok: false, reason: "invalid-key" };
+    var deviceId = getOrCreateDeviceId();
+    if (!deviceId) return { ok: false, reason: "device-id-failed" };
+    var file = await fetchLicenseFile();
+    var entry = file.json[serialKey];
+    if (!entry) return { ok: false, reason: "invalid-key" };
+    entry.devices = entry.devices || [];
+    if (entry.devices.indexOf(deviceId) !== -1) {
+      return { ok: true, alreadyActivated: true, deviceId: deviceId, deviceCount: entry.devices.length };
+    }
+    if (entry.devices.length >= MAX_DEVICES_PER_KEY) {
+      return { ok: false, reason: "device-limit", deviceCount: entry.devices.length };
+    }
+    entry.devices.push(deviceId);
+    var writeRes = await writeLicenseFile(file.json, file.sha, "activate device for " + serialKey);
+    if (!writeRes.ok) return { ok: false, reason: "write-failed" };
+    return { ok: true, deviceId: deviceId, deviceCount: entry.devices.length };
+  } catch (e) {
+    return { ok: false, reason: "network-error" };
+  }
+});
+
+// 지금 이 기기를 그 시리얼키에서 해제한다(컴퓨터를 바꿀 때 다른 기기에서
+// 새로 등록할 수 있게 자리를 비워주는 용도).
+ipcMain.handle("license-deactivate-self", async (event, serialKey) => {
+  try {
+    if (!isLicenseConfigured()) return { ok: false, reason: "not-configured" };
+    if (!serialKey || typeof serialKey !== "string") return { ok: false, reason: "invalid-key" };
+    var deviceId = getOrCreateDeviceId();
+    var file = await fetchLicenseFile();
+    var entry = file.json[serialKey];
+    if (!entry) return { ok: false, reason: "invalid-key" };
+    entry.devices = (entry.devices || []).filter(function (d) { return d !== deviceId; });
+    var writeRes = await writeLicenseFile(file.json, file.sha, "deactivate device for " + serialKey);
+    if (!writeRes.ok) return { ok: false, reason: "write-failed" };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: "network-error" };
+  }
+});
+
+// 저장된 키가 지금도 이 기기에서 유효한지(다른 기기에서 나를 해제해버리지
+// 않았는지) 조용히 다시 확인할 때 쓴다. 오프라인이면 그냥 에러로 처리하고,
+// 렌더러 쪽에서는 이걸로 무조건 막지 않고 마지막으로 확인된 상태를 그대로
+// 믿어준다(인터넷 없을 때도 앱은 계속 쓸 수 있어야 하므로).
+ipcMain.handle("license-status", async (event, serialKey) => {
+  try {
+    if (!isLicenseConfigured()) return { ok: false, reason: "not-configured" };
+    if (!serialKey || typeof serialKey !== "string") return { ok: false, reason: "invalid-key" };
+    var deviceId = getOrCreateDeviceId();
+    var file = await fetchLicenseFile();
+    var entry = file.json[serialKey];
+    if (!entry) return { ok: false, reason: "invalid-key" };
+    var devices = entry.devices || [];
+    return { ok: true, activated: devices.indexOf(deviceId) !== -1, deviceCount: devices.length, deviceId: deviceId };
+  } catch (e) {
+    return { ok: false, reason: "network-error" };
+  }
 });
 
 // 창 버튼(최소화/최대화/닫기) 오버레이의 "현재" 색상/높이 값.
@@ -194,15 +371,29 @@ ipcMain.on("show-reminder-notification", (event, payload) => {
   } catch (e) {}
 });
 
-app.whenReady().then(() => {
-  initAutoLaunchDefault();
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// 뒤늦게 실행된(락을 못 얻은) 두 번째 프로세스가 위에서 이미 종료를 예약했으므로,
+// 그 경우 아래 초기화 로직 자체를 건너뛴다. 정상적인(락을 획득한) 프로세스에서
+// 두 번째 실행 시도가 감지되면("second-instance") 새 창을 띄우는 대신 기존
+// 창을 앞으로 가져와 포커스한다.
+if (gotSingleInstanceLock) {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
   });
-});
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
+  app.whenReady().then(() => {
+    initAutoLaunchDefault();
+    createWindow();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") app.quit();
+  });
+}

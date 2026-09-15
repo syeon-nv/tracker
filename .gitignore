@@ -1,0 +1,15 @@
+# 시리얼키 라이선스용 실제 토큰/저장소 정보. license-config.example.js를
+# 복사해서 만드는 파일이며, 절대 깃허브에 올라가면 안 된다(토큰 유출 방지).
+license-config.js
+
+# 빌드 산출물 / 의존성
+node_modules/
+dist/
+dist-installer/
+
+# OS/에디터가 만드는 잡파일
+.DS_Store
+Thumbs.db
+
+# 빌드/배포 가이드 문서는 깃허브에 올리지 않음
+README.md

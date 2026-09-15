@@ -159,16 +159,6 @@
   .icon-nav-btn[draggable="true"] { cursor: grab; }
   .icon-nav-btn.dragging { opacity: 0.35; cursor: grabbing; }
   .icon-nav-btn.drag-over { border-color: var(--accent-gold); background: var(--accent-gold); color: var(--accent-ink-solid); }
-  /* 사이드바(세로 아이콘 내비게이션) 맨 아래에 앱 버전을 작게 표시한다. margin-top:auto로
-     내비게이션 칸의 나머지 빈 공간을 밀어내 항상 맨 밑에 붙는다. */
-  .app-version-tag {
-    margin-top: auto;
-    padding-top: 12px;
-    font-size: 10px;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-muted);
-    opacity: 0.7;
-  }
   @media (max-width: 700px) {
     .app-shell { flex-direction: column; }
     .icon-nav {
@@ -737,6 +727,22 @@
     color: var(--accent-ink-solid);
     font-weight: 700;
   }
+  /* 일요일/공휴일 날짜 숫자는 빨간 글씨로 구분한다(오늘 날짜 칸은 강조색 배경이
+     이미 있으니 그대로 두고 빨간색을 덮어쓰지 않는다 — 아래 today 규칙이 클래스
+     3개짜리라 항상 이긴다). */
+  .cal-daynum.cal-daynum-red { color: #C0524A; }
+  .cal-weekday.cal-weekday-sun { color: #C0524A; }
+  .cal-holiday-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #C0524A;
+    margin: 1px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   /* 체크한 할 일 표시: 다 체크된 날엔 일기 아이콘 옆(맨 위 줄)에 다이아(반짝임)만
      인라인으로 보여준다(칸 우측 상단, 오른쪽 한 곳에서만 진행 상황을 알 수 있게). */
   .cal-done-mark {
@@ -1221,6 +1227,13 @@
   /* 설정 카드 안에 토글/슬라이더 행이 여러 개 쌓일 때 쓰는 공용 간격 규칙.
      이 클래스를 쓰는 카드는 나중에 행을 더 추가해도 자동으로 같은 간격이 맞춰진다. */
   .settings-rows-card .settings-toggle-row + .settings-toggle-row { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  /* 위 항목(자동 실행)이 데스크톱 앱이 아니라서 안내 문구(.settings-toggle-row-hint)가
+     끼어드는 경우, 그 문구가 직계 다음 형제 규칙(+)의 연결을 끊어버려서 구분선이
+     안 생긴다. 버전 행은 그 문구 유무와 상관없이 항상 구분선이 보여야 하므로 별도로
+     지정한다. */
+  .settings-rows-card .settings-version-row,
+  .settings-rows-card .settings-data-backup-row,
+  .settings-rows-card .settings-license-row { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
   .file-input-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .custom-sound-upload-btn { cursor: pointer; }
   .custom-sound-upload-btn.disabled { pointer-events: none; opacity: 0.5; }
@@ -1243,6 +1256,12 @@
   .settings-toggle-row-label { font-size: 13.5px; font-weight: 600; color: var(--ink); }
   .settings-toggle-row-desc { font-size: 12px; color: var(--ink-muted); margin-top: 2px; line-height: 1.5; }
   .settings-toggle-row-hint { font-size: 12px; color: var(--ink-muted); margin: 10px 0 0; padding-left: 15px; }
+  .version-check-status { font-size: 11.5px; margin: 4px 0 0; }
+  .version-check-latest { color: var(--ink-muted); }
+  .version-check-outdated { color: var(--accent-text); font-weight: 600; }
+  .settings-version-value { font-size: 13px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .settings-data-backup-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .settings-data-backup-actions label.pill { cursor: pointer; }
   .settings-toggle-list { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
   .toggle-switch {
     flex-shrink: 0;
@@ -1325,7 +1344,7 @@
   .settings-title-input { flex: 1; min-width: 0; font: inherit; font-size: 14px; font-weight: 600; border: 1px solid var(--accent-gold); border-radius: 8px; background: var(--paper); color: var(--ink); padding: 0 8px; height: 35px; }
   .settings-title-input::placeholder { font-weight: normal; }
   .recurring-add-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .recurring-add-row-label { font-size: 12.5px; font-weight: 700; color: color-mix(in srgb, var(--accent-gold) 55%, var(--ink) 45%); flex-shrink: 0; width: 32px; }
+  .recurring-add-row-label { font-size: 12.5px; font-weight: 700; color: color-mix(in srgb, var(--accent-gold) 55%, var(--ink) 45%); flex-shrink: 0; min-width: 32px; white-space: nowrap; }
   .recurring-add-row-label-weekday { margin-left: 0; width: auto; }
   .recurring-add-tilde { color: var(--ink-muted); flex-shrink: 0; }
   .recurring-weekday-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -1449,7 +1468,6 @@
     font-size: 14px;
     line-height: 1.7;
     padding: 16px;
-    box-shadow: var(--shadow);
     box-sizing: border-box;
   }
   .diary-textarea:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 1px; }
@@ -1783,6 +1801,46 @@
   .btn-add-ghost:hover { border-color: var(--accent-gold); }
   .btn-add-danger { font: inherit; font-weight: 700; font-size: 13px; background: #C0524A; color: #fff; border: none; border-radius: 8px; padding: 0 16px; height: 36px; cursor: pointer; white-space: nowrap; }
   .btn-add-danger:hover { background: #A8433C; }
+  .license-gate {
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 24px;
+  }
+  .license-gate-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 360px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .license-gate-card h2 { margin: 0 0 8px; font-size: 18px; }
+  .license-gate-desc { font-size: 12.5px; color: var(--ink-muted); line-height: 1.6; margin: 0 0 18px; }
+  .license-gate-input {
+    width: 100%;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
+  .license-gate-error { font-size: 12px; color: #C0524A; margin: 0 0 10px; }
+  .license-gate-btn { width: 100%; }
 
   .diary-mode-tabs { display: flex; gap: 6px; }
   .diary-mode-tabs-right { justify-content: flex-end; }
@@ -1821,7 +1879,6 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--card);
-    box-shadow: var(--shadow);
     padding: 16px 18px;
     font-size: 14px;
     line-height: 1.7;
@@ -1907,6 +1964,108 @@
   })();
   var WEEKDAY_FULL_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   var WEEKDAY_LABELS_EN_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // 대한민국 공휴일("빨간날") 목록. 설날/추석/부처님오신날처럼 음력 기준이라 매년 실제
+  // 날짜가 달라지는 공휴일은 연도별로 직접 날짜를 적어뒀다(정부·공공 캘린더 기준
+  // 2024~2028년). 목록에 없는 연도(이 범위를 벗어난 과거/먼 미래)는 조용히 아무 것도
+  // 표시하지 않는다 — 대체공휴일은 실제 지정된 날짜만 포함했다(예: 현충일은 법령상
+  // 대체공휴일 대상이 아니라서 토·일요일과 겹쳐도 별도 대체일이 없다).
+  // 이름은 언어 설정(한/영)에 맞춰 그대로 보여줄 수 있도록 ko/en 둘 다 넣어둔다.
+  var KOREAN_HOLIDAYS = {
+    "2024-01-01": { ko: "신정", en: "New Year's Day" },
+    "2024-02-09": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2024-02-10": { ko: "설날", en: "Lunar New Year's Day" },
+    "2024-02-11": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2024-03-01": { ko: "삼일절", en: "Independence Movement Day" },
+    "2024-05-05": { ko: "어린이날", en: "Children's Day" },
+    "2024-05-06": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2024-05-15": { ko: "부처님오신날", en: "Buddha's Birthday" },
+    "2024-06-06": { ko: "현충일", en: "Memorial Day" },
+    "2024-08-15": { ko: "광복절", en: "Liberation Day" },
+    "2024-09-16": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2024-09-17": { ko: "추석", en: "Chuseok" },
+    "2024-09-18": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2024-10-03": { ko: "개천절", en: "National Foundation Day" },
+    "2024-10-09": { ko: "한글날", en: "Hangeul Day" },
+    "2024-12-25": { ko: "성탄절", en: "Christmas Day" },
+    "2025-01-01": { ko: "신정", en: "New Year's Day" },
+    "2025-01-27": { ko: "임시공휴일", en: "Temporary Holiday" },
+    "2025-01-28": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2025-01-29": { ko: "설날", en: "Lunar New Year's Day" },
+    "2025-01-30": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2025-03-01": { ko: "삼일절", en: "Independence Movement Day" },
+    "2025-03-03": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2025-05-05": { ko: "어린이날·부처님오신날", en: "Children's Day / Buddha's Birthday" },
+    "2025-05-06": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2025-06-06": { ko: "현충일", en: "Memorial Day" },
+    "2025-08-15": { ko: "광복절", en: "Liberation Day" },
+    "2025-10-03": { ko: "개천절", en: "National Foundation Day" },
+    "2025-10-05": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2025-10-06": { ko: "추석", en: "Chuseok" },
+    "2025-10-07": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2025-10-08": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2025-10-09": { ko: "한글날", en: "Hangeul Day" },
+    "2025-12-25": { ko: "성탄절", en: "Christmas Day" },
+    "2026-01-01": { ko: "신정", en: "New Year's Day" },
+    "2026-02-16": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2026-02-17": { ko: "설날", en: "Lunar New Year's Day" },
+    "2026-02-18": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2026-03-01": { ko: "삼일절", en: "Independence Movement Day" },
+    "2026-03-02": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2026-05-05": { ko: "어린이날", en: "Children's Day" },
+    "2026-05-24": { ko: "부처님오신날", en: "Buddha's Birthday" },
+    "2026-05-25": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2026-06-06": { ko: "현충일", en: "Memorial Day" },
+    "2026-08-15": { ko: "광복절", en: "Liberation Day" },
+    "2026-08-17": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2026-09-24": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2026-09-25": { ko: "추석", en: "Chuseok" },
+    "2026-09-26": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2026-10-03": { ko: "개천절", en: "National Foundation Day" },
+    "2026-10-05": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2026-10-09": { ko: "한글날", en: "Hangeul Day" },
+    "2026-12-25": { ko: "성탄절", en: "Christmas Day" },
+    "2027-01-01": { ko: "신정", en: "New Year's Day" },
+    "2027-02-06": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2027-02-07": { ko: "설날", en: "Lunar New Year's Day" },
+    "2027-02-08": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2027-02-09": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2027-03-01": { ko: "삼일절", en: "Independence Movement Day" },
+    "2027-05-05": { ko: "어린이날", en: "Children's Day" },
+    "2027-05-13": { ko: "부처님오신날", en: "Buddha's Birthday" },
+    "2027-06-06": { ko: "현충일", en: "Memorial Day" },
+    "2027-08-15": { ko: "광복절", en: "Liberation Day" },
+    "2027-08-16": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2027-09-14": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2027-09-15": { ko: "추석", en: "Chuseok" },
+    "2027-09-16": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2027-10-03": { ko: "개천절", en: "National Foundation Day" },
+    "2027-10-04": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2027-10-09": { ko: "한글날", en: "Hangeul Day" },
+    "2027-10-11": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2027-12-25": { ko: "성탄절", en: "Christmas Day" },
+    "2027-12-27": { ko: "대체공휴일", en: "Substitute Holiday" },
+    "2028-01-01": { ko: "신정", en: "New Year's Day" },
+    "2028-01-25": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2028-01-26": { ko: "설날", en: "Lunar New Year's Day" },
+    "2028-01-27": { ko: "설날 연휴", en: "Lunar New Year Holiday" },
+    "2028-03-01": { ko: "삼일절", en: "Independence Movement Day" },
+    "2028-05-02": { ko: "부처님오신날", en: "Buddha's Birthday" },
+    "2028-05-05": { ko: "어린이날", en: "Children's Day" },
+    "2028-06-06": { ko: "현충일", en: "Memorial Day" },
+    "2028-08-15": { ko: "광복절", en: "Liberation Day" },
+    "2028-10-02": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2028-10-03": { ko: "추석·개천절", en: "Chuseok / National Foundation Day" },
+    "2028-10-04": { ko: "추석 연휴", en: "Chuseok Holiday" },
+    "2028-10-09": { ko: "한글날", en: "Hangeul Day" },
+    "2028-12-25": { ko: "성탄절", en: "Christmas Day" }
+  };
+  // 날짜 키("YYYY-MM-DD")로 공휴일 정보를 찾아, 현재 언어 설정에 맞는 이름으로
+  // 돌려준다. 목록에 없는 날짜는 null.
+  function getHolidayInfo(key) {
+    var h = KOREAN_HOLIDAYS[key];
+    if (!h) return null;
+    return APP_LANG === "en" ? h.en : h.ko;
+  }
   var I18N_EN = {
     "월 ": "",
     "주차": "",
@@ -2169,6 +2328,30 @@
     "일 연속": " days",
     "테마 색상": "Theme Color",
     "앱 버전": "App version",
+    "최신버전입니다": "You're on the latest version",
+    "최신 버전: ": "Latest version: ",
+    "데이터 백업": "Data Backup",
+    "모든 데이터를 파일로 저장하거나 불러와요. 컴퓨터를 옮길 때 사용하세요.": "Save all your data to a file, or load it back in. Use this when moving to a new computer.",
+    "내보내기": "Export",
+    "가져오기": "Import",
+    "데이터 가져오기": "Import Data",
+    "백업 파일의 내용으로 현재 데이터를 덮어씁니다. 지금 있는 데이터는 사라져요. 계속할까요?": "This will overwrite your current data with the backup file's contents. Your current data will be lost. Continue?",
+    "JSON 파일만 선택할 수 있어요.": "Only JSON files can be selected.",
+    "올바른 백업 파일이 아니에요.": "This isn't a valid backup file.",
+    "시리얼키 인증": "Serial Key Activation",
+    "이 컴퓨터에서 Tracker를 쓰려면 시리얼키를 입력해주세요. 한 키당 최대 2대까지 등록할 수 있어요.": "Enter your serial key to use Tracker on this computer. Each key can be registered on up to 2 devices.",
+    "확인 중...": "Checking...",
+    "인증하기": "Activate",
+    "시리얼키": "Serial Key",
+    "이 기기에 등록됨": "registered on this device",
+    "이 기기 해제": "Unregister this device",
+    "해제 중...": "Unregistering...",
+    "시리얼키를 입력해주세요.": "Please enter a serial key.",
+    "올바르지 않은 시리얼키예요.": "That serial key isn't valid.",
+    "이 시리얼키는 등록 가능한 기기 수(2대)를 이미 다 썼어요.": "This serial key has already reached its device limit (2).",
+    "인터넷 연결을 확인해주세요.": "Please check your internet connection.",
+    "인증에 실패했어요. 잠시 후 다시 시도해주세요.": "Activation failed. Please try again in a moment.",
+    "라이선스 기능이 아직 설정되지 않았어요.": "The license feature hasn't been set up yet.",
     "파스텔 팔레트 · 그라데이션 커스텀 가능 · 칩에 마우스를 올리면 삭제할 수 있어요.": "Pastel palette · custom gradients supported · hover over a chip to delete it.",
     "단색": "Solid Color",
     "이 단색을 칩으로 추가": "Add this solid color as a chip",
@@ -2204,13 +2387,55 @@
   // "__APP_VERSION__"을 그대로 찾아 바꾸는 단순 치환 스크립트가 이 판별용
   // 값까지 함께 바꿔버리는 일이 없도록 한다(그러면 항상 placeholder로
   // 오판되어 업데이트 감지가 영영 꺼져버린다).
-  var APP_VERSION = "1.1.4";
+  var APP_VERSION = "__APP_VERSION__";
   var APP_VERSION_PLACEHOLDER = "__APP_" + "VERSION__";
   var APP_VERSION_STORAGE_KEY = "angle-quest-app-version";
   // 화면 하단(사이드바)에 표시할 버전 문자열. 빌드 치환이 안 된 원본 파일을 그대로
   // 열었을 때는(로컬 개발 등) 실제 버전이 아니므로 "dev"로 대신 표시한다.
   function appVersionLabel() {
     return APP_VERSION === APP_VERSION_PLACEHOLDER ? "dev" : APP_VERSION;
+  }
+
+  // 온라인 최신 버전 확인: 이 앱은 별도 서버 없이 파일만 배포되는 구조라, 직접
+  // 관리하는 공개 GitHub 저장소에 버전 번호만 담은 작은 JSON 파일을 올려두고
+  // 그걸 읽어와서 비교한다(설치 프로그램이 자동 업데이트를 해주는 게 아니라,
+  // 단순히 "지금 최신인지 아닌지"만 알려주는 용도). 파일 형식: {"version": "1.2.0"}
+  var VERSION_CHECK_URL = "https://raw.githubusercontent.com/syeon-nv/tracker/main/version.json";
+  // status: "idle" | "loading" | "ok" | "error"
+  var latestVersionCheck = { status: "idle", latest: null };
+
+  function checkLatestVersionOnline() {
+    // 빌드 치환이 안 된 원본 파일(로컬 개발)이거나 확인용 URL이 없으면 시도하지 않는다.
+    if (APP_VERSION === APP_VERSION_PLACEHOLDER || !VERSION_CHECK_URL) return;
+    if (typeof fetch !== "function") return;
+    latestVersionCheck = { status: "loading", latest: null };
+    fetch(VERSION_CHECK_URL, { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("bad status");
+        return res.json();
+      })
+      .then(function (data) {
+        var latest = data && typeof data.version === "string" ? data.version.trim() : "";
+        if (!latest) throw new Error("no version field");
+        latestVersionCheck = { status: "ok", latest: latest };
+        render();
+      })
+      .catch(function () {
+        latestVersionCheck = { status: "error", latest: null };
+        render();
+      });
+  }
+
+  // 앱 설정 화면에 표시할 "버전 확인" 안내 문구. 온라인 확인이 아직 안 됐거나
+  // 실패한 경우엔 조용히 아무 것도 보여주지 않는다(오류 문구로 사용자를
+  // 불안하게 만들 필요는 없음 — 오프라인일 수도 있으므로).
+  function versionCheckStatusHtml() {
+    if (latestVersionCheck.status === "ok") {
+      return latestVersionCheck.latest === appVersionLabel()
+        ? ('<p class="version-check-status version-check-latest">' + tr("최신버전입니다") + "</p>")
+        : ('<p class="version-check-status version-check-outdated">' + tr("최신 버전: ") + "v" + escapeHtml(latestVersionCheck.latest) + "</p>");
+    }
+    return "";
   }
 
   function pad(n) { return String(n).padStart(2, "0"); }
@@ -3035,6 +3260,42 @@
   var settingsActiveTab = "checklist";
   var portfolioGoalCardTab = "0";
   var diaryDeleteModalDate = null;
+  // 데이터 가져오기: 사용자가 고른 백업 파일의 원문 텍스트(JSON 문자열)를 확인 모달을
+  // 띄우는 동안 잠깐 담아두는 곳. 확인을 누르기 전까진 실제 데이터에 반영되지 않는다.
+  var pendingImportData = null;
+  var dataBackupNotice = "";
+
+  // ── 시리얼키 + 기기 인증(라이선스) ────────────────────────────────────
+  // window.licenseAPI가 있을 때만(Electron 패키징 앱) 의미가 있고, 아티팩트
+  // 미리보기나 index.html을 그냥 브라우저로 연 경우에는 licenseAPI 자체가
+  // 없으므로 인증 화면을 아예 띄우지 않는다(막을 방법이 없는 환경이라
+  // 억지로 막아봤자 사용성만 나빠진다).
+  var LICENSE_STORAGE_KEY = "angle-quest-license";
+  function loadLicenseState() {
+    try {
+      var raw = localStorage.getItem(LICENSE_STORAGE_KEY);
+      if (!raw) return null;
+      var v = JSON.parse(raw);
+      return (v && v.key) ? v : null;
+    } catch (e) { return null; }
+  }
+  function saveLicenseState(v) {
+    try {
+      if (v) localStorage.setItem(LICENSE_STORAGE_KEY, JSON.stringify(v));
+      else localStorage.removeItem(LICENSE_STORAGE_KEY);
+    } catch (e) {}
+  }
+  var licenseState = loadLicenseState();
+  var licenseGateInput = "";
+  var licenseGateBusy = false;
+  var licenseGateError = "";
+  var licenseSettingsBusy = false;
+  function licenseGateShouldShow() {
+    // license-config.js를 아직 안 채워넣은 상태(개발 중, 또는 이 기능을 아직
+    // 안 쓰기로 한 경우)에는 isConfiguredSync()가 false를 돌려주므로 인증
+    // 화면 자체를 띄우지 않는다 — 설정 전인데 자기 자신이 잠겨버리는 걸 막기 위함.
+    return !!(window.licenseAPI && typeof window.licenseAPI.isConfiguredSync === "function" && window.licenseAPI.isConfiguredSync()) && !licenseState;
+  }
   var diarySaveStatus = "";
   var notifiedToday = {};
   var imageSlideIndex = { diary: 0, calendar: 0 };
@@ -3216,6 +3477,149 @@
     // 파일 저장이 가능하면 그게 진짜 저장 위치다 — 내 컴퓨터의 실제 파일에 남는다.
     try { localStorage.setItem(STORAGE_KEY, json); } catch (e) {}
     try { if (window.storageAPI && typeof window.storageAPI.save === "function") window.storageAPI.save(json); } catch (e) {}
+  }
+
+  // 데이터 백업(내보내기): 지금 상태를 JSON 파일로 내려받는다. 그림 일기의
+  // 이미지도 data URL 형태로 state 안에 그대로 들어있으므로 별도 처리 없이
+  // 파일 하나에 전부 담긴다. 컴퓨터를 바꿀 때 이 파일 하나만 옮기면 된다.
+  // 일반적인 <a download>/Blob URL 다운로드 방식. Electron 앱이나 로컬 파일로
+  // 직접 연 index.html, 일반 브라우저에서는 이 방식이 그대로 잘 동작한다.
+  function exportDataToFileLegacy(json, filename) {
+    try {
+      var blob = new Blob([json], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      dataBackupNotice = "";
+    } catch (e) {
+      dataBackupNotice = tr("올바른 백업 파일이 아니에요.");
+      render();
+    }
+  }
+
+  function exportDataToFile() {
+    try {
+      saveState();
+      var json = JSON.stringify(state, null, 2);
+      var filename = "tracker-backup-" + todayStr() + ".json";
+      // 발행된 Claude 아티팩트 미리보기 페이지에서는 <a download>/Blob URL
+      // 다운로드가 동작하지 않는다(뷰어가 다운로드 권한 자체를 안 줌). 그런
+      // 환경에서만 window.claude.use("downloads")로 저장하고, 그 외(Electron
+      // 앱, 로컬 파일로 직접 연 index.html, 일반 브라우저)에서는 원래 방식을
+      // 그대로 쓴다.
+      if (window.claude && typeof window.claude.use === "function") {
+        window.claude.use("downloads").then(function (downloads) {
+          if (!downloads) { exportDataToFileLegacy(json, filename); return; }
+          var blob = new Blob([json], { type: "application/json" });
+          downloads.save({ filename: filename, data: blob }).then(function () {
+            dataBackupNotice = "";
+          }).catch(function (err) {
+            // "declined"(사용자가 저장 대화상자에서 취소)는 오류가 아니므로
+            // 별도 안내 없이 조용히 둔다.
+            if (err && err.code === "declined") return;
+            dataBackupNotice = tr("올바른 백업 파일이 아니에요.");
+            render();
+          });
+        }).catch(function () {
+          exportDataToFileLegacy(json, filename);
+        });
+        return;
+      }
+      exportDataToFileLegacy(json, filename);
+    } catch (e) {
+      dataBackupNotice = tr("올바른 백업 파일이 아니에요.");
+      render();
+    }
+  }
+
+  // 데이터 백업(가져오기) 확인 후 실제 반영. 저장소(파일/localStorage)에 통째로
+  // 덮어쓴 다음 새로고침해서, 앱 시작 시 이미 있는 정상적인 불러오기·검증 로직
+  // (state 초기화 부분)을 그대로 한 번 더 태워 안전하게 반영되게 한다.
+  function applyImportedData(jsonText) {
+    if (!jsonText) return;
+    try {
+      JSON.parse(jsonText); // 형식 검증만 다시 한번(모달 확인 사이에 문제 생겼는지)
+      try { localStorage.setItem(STORAGE_KEY, jsonText); } catch (e0) {}
+      try { if (window.storageAPI && typeof window.storageAPI.save === "function") window.storageAPI.save(jsonText); } catch (e1) {}
+      pendingImportData = null;
+      location.reload();
+    } catch (e) {
+      pendingImportData = null;
+      dataBackupNotice = tr("올바른 백업 파일이 아니에요.");
+      render();
+    }
+  }
+
+  // 설정 > 환경설정 카드 안에 들어가는 라이선스(시리얼키) 행. window.licenseAPI가
+  // 있을 때만(Electron 패키징 앱) 렌더된다 — 인증 게이트 자체를 통과했다는 건
+  // licenseState가 있다는 뜻이므로, 여기서는 항상 등록된 키가 있다고 가정한다.
+  function licenseSettingsRowHtml() {
+    if (!licenseState) return "";
+    var key = licenseState.key || "";
+    var masked = key.length > 4 ? ("••••" + key.slice(-4)) : key;
+    return (
+      '<div class="settings-toggle-row settings-license-row">' +
+      '<div class="settings-toggle-row-text">' +
+      '<div class="settings-toggle-row-label">' + tr("시리얼키") + "</div>" +
+      '<div class="settings-toggle-row-desc">' + escapeHtml(masked) + " · " + tr("이 기기에 등록됨") + "</div>" +
+      "</div>" +
+      '<button type="button" class="pill" data-action="license-deactivate-btn"' + (licenseSettingsBusy ? " disabled" : "") + ">" + (licenseSettingsBusy ? tr("해제 중...") : tr("이 기기 해제")) + "</button>" +
+      "</div>"
+    );
+  }
+
+  function licenseErrorMessage(reason) {
+    if (reason === "invalid-key") return tr("올바르지 않은 시리얼키예요.");
+    if (reason === "device-limit") return tr("이 시리얼키는 등록 가능한 기기 수(2대)를 이미 다 썼어요.");
+    if (reason === "network-error") return tr("인터넷 연결을 확인해주세요.");
+    if (reason === "not-configured") return tr("라이선스 기능이 아직 설정되지 않았어요.");
+    return tr("인증에 실패했어요. 잠시 후 다시 시도해주세요.");
+  }
+
+  function activateLicenseFromGate() {
+    if (licenseGateBusy || !window.licenseAPI) return;
+    var key = (licenseGateInput || "").trim();
+    if (!key) {
+      licenseGateError = tr("시리얼키를 입력해주세요.");
+      render();
+      return;
+    }
+    licenseGateBusy = true;
+    licenseGateError = "";
+    render();
+    window.licenseAPI.activate(key).then(function (res) {
+      licenseGateBusy = false;
+      if (res && res.ok) {
+        licenseState = { key: key, deviceId: res.deviceId, activatedAt: Date.now() };
+        saveLicenseState(licenseState);
+        licenseGateInput = "";
+        licenseGateError = "";
+      } else {
+        licenseGateError = licenseErrorMessage(res && res.reason);
+      }
+      render();
+    });
+  }
+
+  // 설정 페이지의 "이 기기 해제" 버튼. 컴퓨터를 바꿀 때, 예전 기기가 쓰던 자리를
+  // 비워서 새 기기에서 같은 키로 다시 인증할 수 있게 해준다.
+  function deactivateLicenseFromSettings() {
+    if (licenseSettingsBusy || !licenseState || !window.licenseAPI) return;
+    licenseSettingsBusy = true;
+    render();
+    window.licenseAPI.deactivateSelf(licenseState.key).then(function (res) {
+      licenseSettingsBusy = false;
+      if (res && res.ok) {
+        licenseState = null;
+        saveLicenseState(null);
+      }
+      render();
+    });
   }
 
   var diarySaveTimer = null;
@@ -3499,7 +3903,7 @@
   window.addEventListener("resize", function () { hideMdToolbar(); });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && mdToolbarTarget) hideMdToolbar();
-    if (e.key === "Escape" && newVersionModalInfo) { newVersionModalInfo = null; render(); }
+    if (e.key === "Escape" && newVersionModalInfo) { dismissNewVersionModal(); render(); }
     if (e.key === "Escape" && diaryDeleteModalDate) { diaryDeleteModalDate = null; render(); }
   });
 
@@ -3578,6 +3982,11 @@
       }
       var key = cy + "-" + pad(cm + 1) + "-" + pad(cd);
       var isToday = key === todayKey;
+      // 달력 칸이 항상 일요일부터 시작하는 7열 그리드라서(WEEKDAY_LABELS[0]도 "일"),
+      // 칸 인덱스(i)를 7로 나눈 나머지가 그대로 요일 인덱스가 된다 — 매번 새 Date를
+      // 만들어 getDay()를 부르지 않아도 된다.
+      var isSunday = i % 7 === 0;
+      var holidayName = getHolidayInfo(key);
       var log = state.dailyLog[key];
       var doneTasks = log ? state.dailyTasks.filter(function (t) { return !!log[t.id]; }) : [];
       var diaryEntry = state.diary[key];
@@ -3718,17 +4127,23 @@
       var topRightHtml = compact
         ? (diaryMarkHtml + tagsHtml)
         : (recurringMarkHtml + diaryMarkHtml + deadlineMarkHtml + tagsHtml);
+      // 일요일과 공휴일은 날짜 숫자를 빨갛게 표시한다(공휴일 이름은 큰 달력에서만
+      // 숫자 아래 작은 라벨로도 보여주고, 작은 달력들은 칸이 좁아 색만 바꾼다).
+      var isRedDay = isSunday || !!holidayName;
+      var daynumClass = "cal-daynum" + (isRedDay ? " cal-daynum-red" : "");
+      var holidayLabelHtml = (!compact && holidayName) ? ('<span class="cal-holiday-label">' + escapeHtml(holidayName) + "</span>") : "";
       cellsHtml +=
-        '<div class="cal-cell' + (inMonth ? "" : " outside") + (isToday ? " today" : "") + (doneTasks.length ? " has-log" : "") + (isSelected ? " diary-selected" : "") + (isFuture ? " cal-cell-future" : "") + '" title="' + key + (hasDiary ? " · " + tr("그림 일기 있음") : "") + '"' +
+        '<div class="cal-cell' + (inMonth ? "" : " outside") + (isToday ? " today" : "") + (doneTasks.length ? " has-log" : "") + (isSelected ? " diary-selected" : "") + (isFuture ? " cal-cell-future" : "") + '" title="' + key + (holidayName ? " · " + holidayName : "") + (hasDiary ? " · " + tr("그림 일기 있음") : "") + '"' +
         (clickable ? ' data-action="' + cellAction + '" data-date="' + key + '"' : "") + '>' +
-        '<div class="cal-cell-top"><span class="cal-daynum">' + cd + "</span>" +
+        '<div class="cal-cell-top"><span class="' + daynumClass + '">' + cd + "</span>" +
         '<span class="cal-cell-top-right">' +
         topRightHtml +
         "</span></div>" +
+        holidayLabelHtml +
         chipsHtml +
         "</div>";
     }
-    var weekdayHtml = WEEKDAY_LABELS.map(function (w) { return '<div class="cal-weekday">' + w + "</div>"; }).join("");
+    var weekdayHtml = WEEKDAY_LABELS.map(function (w, wi) { return '<div class="cal-weekday' + (wi === 0 ? " cal-weekday-sun" : "") + '">' + w + "</div>"; }).join("");
     return (
       '<section class="month-section' + (compact ? " month-section-compact" : "") + '">' +
       '<div class="month-head"><h3>' + (APP_LANG === "en" ? (MONTH_NAMES_EN[vm] + " " + vy) : (vy + tr("년 ") + (vm + 1) + tr("월"))) + '</h3>' +
@@ -4364,7 +4779,6 @@
           "</button>"
         );
       }).join("") +
-      '<span class="app-version-tag" title="' + tr("앱 버전") + '">v' + escapeHtml(appVersionLabel()) + "</span>" +
       "</nav>"
     );
   }
@@ -4574,6 +4988,44 @@
       "<button type=\"button\" class=\"btn-add-ghost\" data-action=\"close-diary-delete-modal\">" + tr("아니오") + "</button>" +
       '<button type="button" class="btn-add-danger" data-action="confirm-delete-diary-entry" data-date="' + diaryDeleteModalDate + "\">" + tr("예") + "</button>" +
       "</div>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  // 백업 파일 가져오기: 파일을 고른 시점엔 아직 적용하지 않고, 일단 내용을 읽어서
+  // pendingImportData에 담아두었다가 사용자가 모달에서 한 번 더 확인해야 실제로
+  // 현재 데이터를 덮어쓴다(실수로 잘못된 파일을 골랐을 때 되돌릴 수 없는 사고를
+  // 막기 위함).
+  function renderImportConfirmModal() {
+    if (!pendingImportData) return "";
+    return (
+      '<div class="modal-overlay" data-action="cancel-import-data-overlay">' +
+      '<div class="modal-card">' +
+      "<div class=\"modal-head\"><h3>" + tr("데이터 가져오기") + "</h3>" +
+      "<button type=\"button\" class=\"icon-btn\" data-action=\"cancel-import-data\" aria-label=\"" + tr("닫기") + "\">" + ICON_X_LINE + "</button>" +
+      "</div>" +
+      "<p class=\"modal-desc\">" + tr("백업 파일의 내용으로 현재 데이터를 덮어씁니다. 지금 있는 데이터는 사라져요. 계속할까요?") + "</p>" +
+      '<div class="modal-actions">' +
+      "<button type=\"button\" class=\"btn-add-ghost\" data-action=\"cancel-import-data\">" + tr("아니오") + "</button>" +
+      '<button type="button" class="btn-add-danger" data-action="confirm-import-data">' + tr("예") + "</button>" +
+      "</div>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  // 앱 전체를 가리는 시리얼키 인증 화면. render()의 applyRender에서
+  // licenseGateShouldShow()가 true일 때 renderBody() 대신 이걸 그린다.
+  function renderLicenseGate() {
+    return (
+      '<div class="license-gate">' +
+      '<div class="license-gate-card">' +
+      '<h2>' + tr("시리얼키 인증") + "</h2>" +
+      '<p class="license-gate-desc">' + tr("이 컴퓨터에서 Tracker를 쓰려면 시리얼키를 입력해주세요. 한 키당 최대 2대까지 등록할 수 있어요.") + "</p>" +
+      '<input type="text" class="license-gate-input" data-role="license-key-input" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX" value="' + escapeHtml(licenseGateInput) + '"' + (licenseGateBusy ? " disabled" : "") + ">" +
+      (licenseGateError ? ('<p class="license-gate-error">' + escapeHtml(licenseGateError) + "</p>") : "") +
+      '<button type="button" class="btn-add license-gate-btn" data-action="license-activate-btn"' + (licenseGateBusy ? " disabled" : "") + ">" + (licenseGateBusy ? tr("확인 중...") : tr("인증하기")) + "</button>" +
       "</div>" +
       "</div>"
     );
@@ -5585,6 +6037,26 @@
       "</button>" +
       "</div>" +
       (hasApi ? "" : ('<p class="settings-toggle-row-hint">' + tr("데스크톱 앱에서만 사용할 수 있어요.") + "</p>")) +
+      '<div class="settings-toggle-row settings-data-backup-row">' +
+      '<div class="settings-toggle-row-text">' +
+      '<div class="settings-toggle-row-label">' + tr("데이터 백업") + "</div>" +
+      '<div class="settings-toggle-row-desc">' + tr("모든 데이터를 파일로 저장하거나 불러와요. 컴퓨터를 옮길 때 사용하세요.") + "</div>" +
+      (dataBackupNotice ? ('<p class="settings-toggle-row-notice">' + escapeHtml(dataBackupNotice) + "</p>") : "") +
+      "</div>" +
+      '<div class="settings-data-backup-actions">' +
+      '<button type="button" class="pill" data-action="export-data">' + tr("내보내기") + "</button>" +
+      '<input type="file" id="data-import-input" class="file-input-hidden" accept="application/json" data-role="data-import-input">' +
+      '<label for="data-import-input" class="pill">' + tr("가져오기") + "</label>" +
+      "</div>" +
+      "</div>" +
+      (window.licenseAPI ? licenseSettingsRowHtml() : "") +
+      '<div class="settings-toggle-row settings-version-row">' +
+      '<div class="settings-toggle-row-text">' +
+      '<div class="settings-toggle-row-label">' + tr("앱 버전") + "</div>" +
+      versionCheckStatusHtml() +
+      "</div>" +
+      '<span class="settings-version-value">v' + escapeHtml(appVersionLabel()) + "</span>" +
+      "</div>" +
       "</div>"
     );
   }
@@ -5897,6 +6369,7 @@
       renderLightbox() +
       renderNewVersionModal() +
       renderDiaryDeleteModal() +
+      renderImportConfirmModal() +
       "</div>"
     );
   }
@@ -5919,7 +6392,7 @@
   function render() {
     var app = document.getElementById("app");
     var applyRender = function () {
-      if (app) app.innerHTML = renderBody();
+      if (app) app.innerHTML = licenseGateShouldShow() ? renderLicenseGate() : renderBody();
       hideMdToolbar();
       autoResizeAllTextareas();
     };
@@ -6288,13 +6761,13 @@
       return;
     }
     if (e.target && e.target.matches && e.target.matches('[data-action="close-new-version-modal-overlay"]')) {
-      newVersionModalInfo = null;
+      dismissNewVersionModal();
       render();
       return;
     }
     var closeNewVersionBtn = e.target.closest && e.target.closest('[data-action="close-new-version-modal"]');
     if (closeNewVersionBtn) {
-      newVersionModalInfo = null;
+      dismissNewVersionModal();
       render();
       return;
     }
@@ -6738,6 +7211,37 @@
       setDiarySaveStatus(tr("삭제됨"));
       render();
       saveState();
+      return;
+    }
+    var exportDataBtn = e.target.closest && e.target.closest('[data-action="export-data"]');
+    if (exportDataBtn) {
+      exportDataToFile();
+      return;
+    }
+    if (e.target && e.target.matches && e.target.matches('[data-action="cancel-import-data-overlay"]')) {
+      pendingImportData = null;
+      render();
+      return;
+    }
+    var cancelImportDataBtn = e.target.closest && e.target.closest('[data-action="cancel-import-data"]');
+    if (cancelImportDataBtn) {
+      pendingImportData = null;
+      render();
+      return;
+    }
+    var confirmImportDataBtn = e.target.closest && e.target.closest('[data-action="confirm-import-data"]');
+    if (confirmImportDataBtn) {
+      applyImportedData(pendingImportData);
+      return;
+    }
+    var licenseActivateBtn = e.target.closest && e.target.closest('[data-action="license-activate-btn"]');
+    if (licenseActivateBtn) {
+      activateLicenseFromGate();
+      return;
+    }
+    var licenseDeactivateBtn = e.target.closest && e.target.closest('[data-action="license-deactivate-btn"]');
+    if (licenseDeactivateBtn) {
+      deactivateLicenseFromSettings();
       return;
     }
     var editGoalStepBtn = e.target.closest && e.target.closest('[data-action="edit-goal-step"]');
@@ -7587,6 +8091,34 @@
       saveState();
       return;
     }
+    // 백업 파일 가져오기: 고른 시점엔 파일 내용만 읽어서 확인 모달에 담아두고,
+    // 실제 반영은 사용자가 모달에서 한 번 더 확인해야 이뤄진다(applyImportedData).
+    if (input.matches && input.matches('[data-role="data-import-input"]')) {
+      var importFile = input.files && input.files[0];
+      if (!importFile) return;
+      var importReader = new FileReader();
+      importReader.onload = function () {
+        var text = typeof importReader.result === "string" ? importReader.result : "";
+        try {
+          var parsedImport = JSON.parse(text);
+          if (!parsedImport || typeof parsedImport !== "object") throw new Error("invalid");
+          dataBackupNotice = "";
+          pendingImportData = text;
+          render();
+        } catch (eParse) {
+          dataBackupNotice = tr("올바른 백업 파일이 아니에요.");
+          render();
+        }
+        input.value = "";
+      };
+      importReader.onerror = function () {
+        dataBackupNotice = tr("올바른 백업 파일이 아니에요.");
+        render();
+        input.value = "";
+      };
+      importReader.readAsText(importFile);
+      return;
+    }
     // 커스텀 알림음 파일 선택: 너무 크거나(5MB 초과) 오디오 파일이 아니면 안내 문구만
     // 보여주고 저장하지 않는다. 성공하면 data URL로 통째로 state에 저장해서, 파일
     // 저장(Electron) / localStorage 어느 쪽으로 저장되든 다음 실행 때도 그대로 남는다.
@@ -7687,6 +8219,8 @@
     } else if (input.matches && input.matches('[data-role="notification-volume"]')) {
       var volLabel = document.querySelector('[data-role="notification-volume-value"]');
       if (volLabel) volLabel.textContent = input.value + "%";
+    } else if (input.matches && input.matches('[data-role="license-key-input"]')) {
+      licenseGateInput = input.value;
     }
   });
 
@@ -7769,7 +8303,9 @@
 
   document.addEventListener("keydown", function (e) {
     var t = e.target;
-    if (t.matches && t.matches('[data-role="task-edit-input"]')) {
+    if (t.matches && t.matches('[data-role="license-key-input"]')) {
+      if (e.key === "Enter") { e.preventDefault(); activateLicenseFromGate(); }
+    } else if (t.matches && t.matches('[data-role="task-edit-input"]')) {
       if (e.key === "Enter") { e.preventDefault(); commitTaskLabelEdit(t.dataset.id); }
       else if (e.key === "Escape") { editingTaskLabelId = null; render(); }
     } else if (t.matches && t.matches('[data-role="task-add-input"]')) {
@@ -8357,14 +8893,45 @@
       if (APP_VERSION === APP_VERSION_PLACEHOLDER) return;
       var savedVersion = localStorage.getItem(APP_VERSION_STORAGE_KEY);
       if (savedVersion && savedVersion !== APP_VERSION) {
+        // 여기서 바로 저장해버리면 사용자가 모달을 확인하지 않아도(예: 모달이
+        // 뜨자마자 앱을 종료) 다음 실행부터 안내가 사라져버린다. 사용자가
+        // 실제로 모달을 닫을 때(dismissNewVersionModal)만 저장해서, "확인을
+        // 눌러야 다음부터 안 뜬다"는 동작을 보장한다.
         newVersionModalInfo = { from: savedVersion, to: APP_VERSION };
-      }
-      if (savedVersion !== APP_VERSION) {
+      } else if (!savedVersion) {
+        // 최초 설치(비교 대상 자체가 없음)는 업데이트가 아니므로 안내 없이
+        // 조용히 현재 버전만 기록한다.
         localStorage.setItem(APP_VERSION_STORAGE_KEY, APP_VERSION);
       }
     } catch (e) {}
   }
+
+  // 새 버전 안내 모달을 닫을 때(확인 버튼, 오버레이 클릭, Esc 모두) 호출한다.
+  // 이 시점에 버전을 기록해야 "확인을 눌러야 다음 실행부터 다시 안 뜬다"가
+  // 지켜진다 — 감지 시점에 바로 기록해버리면 모달을 실제로 닫기 전에 앱을
+  // 종료해도 다음부터 안내가 사라져버리기 때문이다.
+  function dismissNewVersionModal() {
+    if (!newVersionModalInfo) return;
+    try { localStorage.setItem(APP_VERSION_STORAGE_KEY, APP_VERSION); } catch (e) {}
+    newVersionModalInfo = null;
+  }
   checkAppVersionUpdate();
+  checkLatestVersionOnline();
+
+  // 저장된 라이선스가 다른 기기에서 이미 해제됐는지 조용히 한 번 다시
+  // 확인한다. 오프라인이거나 확인 자체가 실패하면 마지막으로 확인된 상태를
+  // 그대로 믿고 계속 쓸 수 있게 둔다(인터넷 없을 때 앱을 못 쓰게 되는 걸
+  // 막기 위함) — 오직 서버가 "이 기기는 등록 안 돼 있다"고 명확히 답할
+  // 때만 다시 인증 화면을 띄운다.
+  if (window.licenseAPI && licenseState) {
+    window.licenseAPI.status(licenseState.key).then(function (res) {
+      if (res && res.ok && !res.activated) {
+        licenseState = null;
+        saveLicenseState(null);
+        render();
+      }
+    });
+  }
 
   applyAccent();
   render();

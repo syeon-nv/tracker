@@ -43,3 +43,21 @@ contextBridge.exposeInMainWorld("notifyAPI", {
     try { ipcRenderer.send("show-reminder-notification", { title: title, body: body }); } catch (e) {}
   }
 });
+
+// 시리얼키 + 기기 인증(라이선스). 실제 검증/기록은 전부 메인 프로세스에서
+// 처리하고(깃허브 API 토큰이 렌더러 쪽 자바스크립트에 절대 노출되지 않도록),
+// 여기서는 결과만 비동기로 돌려받는다.
+contextBridge.exposeInMainWorld("licenseAPI", {
+  isConfiguredSync: function () {
+    try { return !!ipcRenderer.sendSync("license-is-configured"); } catch (e) { return false; }
+  },
+  activate: function (serialKey) {
+    return ipcRenderer.invoke("license-activate", serialKey).catch(function () { return { ok: false, reason: "network-error" }; });
+  },
+  status: function (serialKey) {
+    return ipcRenderer.invoke("license-status", serialKey).catch(function () { return { ok: false, reason: "network-error" }; });
+  },
+  deactivateSelf: function (serialKey) {
+    return ipcRenderer.invoke("license-deactivate-self", serialKey).catch(function () { return { ok: false, reason: "network-error" }; });
+  }
+});
