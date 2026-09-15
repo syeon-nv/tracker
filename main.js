@@ -124,7 +124,7 @@ async function githubApiRequest(method, urlPath, body) {
 async function fetchLicenseFile() {
   var r = await githubApiRequest("GET", "/repos/" + LICENSE_REPO_OWNER + "/" + LICENSE_REPO_NAME + "/contents/" + LICENSE_FILE_PATH);
   if (!r.ok || !r.data || typeof r.data.content !== "string") {
-    throw new Error("license file fetch failed: " + r.status);
+    throw new Error("license file fetch failed (" + r.status + "): " + ((r.data && r.data.message) || JSON.stringify(r.data)));
   }
   var content = Buffer.from(r.data.content, "base64").toString("utf-8");
   return { json: JSON.parse(content), sha: r.data.sha };
@@ -168,10 +168,10 @@ ipcMain.handle("license-activate", async (event, serialKey) => {
     }
     entry.devices.push(deviceId);
     var writeRes = await writeLicenseFile(file.json, file.sha, "activate device for " + serialKey);
-    if (!writeRes.ok) return { ok: false, reason: "write-failed" };
+    if (!writeRes.ok) return { ok: false, reason: "write-failed", detail: (writeRes.data && writeRes.data.message) || ("HTTP " + writeRes.status) };
     return { ok: true, deviceId: deviceId, deviceCount: entry.devices.length };
   } catch (e) {
-    return { ok: false, reason: "network-error" };
+    return { ok: false, reason: "network-error", detail: (e && e.message) || String(e) };
   }
 });
 
@@ -187,10 +187,10 @@ ipcMain.handle("license-deactivate-self", async (event, serialKey) => {
     if (!entry) return { ok: false, reason: "invalid-key" };
     entry.devices = (entry.devices || []).filter(function (d) { return d !== deviceId; });
     var writeRes = await writeLicenseFile(file.json, file.sha, "deactivate device for " + serialKey);
-    if (!writeRes.ok) return { ok: false, reason: "write-failed" };
+    if (!writeRes.ok) return { ok: false, reason: "write-failed", detail: (writeRes.data && writeRes.data.message) || ("HTTP " + writeRes.status) };
     return { ok: true };
   } catch (e) {
-    return { ok: false, reason: "network-error" };
+    return { ok: false, reason: "network-error", detail: (e && e.message) || String(e) };
   }
 });
 
@@ -209,7 +209,7 @@ ipcMain.handle("license-status", async (event, serialKey) => {
     var devices = entry.devices || [];
     return { ok: true, activated: devices.indexOf(deviceId) !== -1, deviceCount: devices.length, deviceId: deviceId };
   } catch (e) {
-    return { ok: false, reason: "network-error" };
+    return { ok: false, reason: "network-error", detail: (e && e.message) || String(e) };
   }
 });
 

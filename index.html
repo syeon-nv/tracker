@@ -3573,12 +3573,18 @@
     );
   }
 
-  function licenseErrorMessage(reason) {
-    if (reason === "invalid-key") return tr("올바르지 않은 시리얼키예요.");
-    if (reason === "device-limit") return tr("이 시리얼키는 등록 가능한 기기 수(2대)를 이미 다 썼어요.");
-    if (reason === "network-error") return tr("인터넷 연결을 확인해주세요.");
-    if (reason === "not-configured") return tr("라이선스 기능이 아직 설정되지 않았어요.");
-    return tr("인증에 실패했어요. 잠시 후 다시 시도해주세요.");
+  function licenseErrorMessage(reason, detail) {
+    var base;
+    if (reason === "invalid-key") base = tr("올바르지 않은 시리얼키예요.");
+    else if (reason === "device-limit") base = tr("이 시리얼키는 등록 가능한 기기 수(2대)를 이미 다 썼어요.");
+    else if (reason === "network-error") base = tr("인터넷 연결을 확인해주세요.");
+    else if (reason === "not-configured") base = tr("라이선스 기능이 아직 설정되지 않았어요.");
+    else if (reason === "write-failed") base = tr("인증에 실패했어요. 잠시 후 다시 시도해주세요.");
+    else base = tr("인증에 실패했어요. 잠시 후 다시 시도해주세요.");
+    // 실제 원인을 진단할 수 있도록, 있으면 상세 에러 내용을 괄호로 덧붙여 보여준다
+    // (토큰이 화면에 노출될 일은 없음 — 여기 들어오는 건 GitHub API의 에러 메시지뿐).
+    if (detail) return base + " (" + detail + ")";
+    return base;
   }
 
   function activateLicenseFromGate() {
@@ -3600,7 +3606,7 @@
         licenseGateInput = "";
         licenseGateError = "";
       } else {
-        licenseGateError = licenseErrorMessage(res && res.reason);
+        licenseGateError = licenseErrorMessage(res && res.reason, res && res.detail);
       }
       render();
     });
@@ -5239,12 +5245,9 @@
     var presets = state.recurringColorPresets || [];
     var swatchesHtml = presets.map(function (p) {
       return (
-        '<span class="swatch-wrap">' +
         '<button type="button" class="deadline-color-swatch' + (p.hex.toLowerCase() === sel ? " selected" : "") + '" ' +
         'data-action="select-recurring-color" data-hex="' + p.hex + '" data-target="' + target + '" ' +
-        'style="background:' + p.hex + "\" aria-label=\"" + tr("색상 선택") + "\" title=\"" + p.hex + "\"></button>" +
-        '<button type="button" class="swatch-delete-btn" data-action="delete-recurring-color-preset" data-id="' + p.id + '" data-target="' + target + "\" aria-label=\"" + tr("삭제") + "\" title=\"" + tr("삭제") + "\">" + ICON_X_LINE + '</button>' +
-        "</span>"
+        'style="background:' + p.hex + "\" aria-label=\"" + tr("색상 선택") + "\" title=\"" + p.hex + "\"></button>"
       );
     }).join("");
     return (
