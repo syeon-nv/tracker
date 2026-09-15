@@ -2967,7 +2967,14 @@
   var DEFAULT_MAIN_PAGE_CARDS = ["monthly", "weekly", "deadlines", "recurringToday", "dailyGoal", "daily"];
   // 새로 추가된 카드이거나 저장된 배치 정보가 전혀 없을 때, 그 카드가 기본으로 놓일 페이지.
   var DEFAULT_CARD_HOST = { monthly: "main", weekly: "main", deadlines: "main", recurringToday: "main", daily: "main", dailyGoal: "main" };
-  var CARD_LABELS = { monthly: tr("나의 목표"), weekly: tr("단계별 목표"), deadlines: tr("마감 일정"), recurringToday: tr("오늘의 일정"), daily: tr("오늘의 할 일"), dailyGoal: tr("작은 실천 목표") };
+  // 주의: tr()을 여기서 미리 호출해서 객체에 캐싱해두면, 나중에 언어를 바꿔도
+  // (APP_LANG만 바뀌고 이 var는 다시 실행되지 않으므로) 이 라벨들은 처음 로드됐을
+  // 때 언어 그대로 남아있게 된다. 그래서 값을 미리 계산해두지 않고, 매번 호출 시점의
+  // 언어로 새로 tr()을 호출하는 함수로 둔다.
+  function cardLabel(id) {
+    var map = { monthly: "나의 목표", weekly: "단계별 목표", deadlines: "마감 일정", recurringToday: "오늘의 일정", daily: "오늘의 할 일", dailyGoal: "작은 실천 목표" };
+    return tr(map[id] || id);
+  }
   var CARD_HOST_PAGE_LABELS = { main: tr("트래커"), diary: tr("일기"), tasks: tr("체크리스트"), portfolio: tr("포트폴리오") };
   // 트래커 페이지에 보일 카드를 사용자가 직접 체크/해제할 수 있다(설정 페이지에서).
   // 기본값은 전부 표시(true)이며, 여기서 꺼둔 카드는 내용이 있어도 트래커 페이지에서 숨겨진다.
@@ -6187,7 +6194,7 @@
       return (
         '<div class="settings-toggle-row">' +
         '<div class="settings-toggle-row-text">' +
-        '<div class="settings-toggle-row-label">' + CARD_LABELS[id] + "</div>" +
+        '<div class="settings-toggle-row-label">' + cardLabel(id) + "</div>" +
         "</div>" +
         '<button type="button" class="toggle-switch' + (on ? " on" : "") + '" data-action="toggle-main-card-visibility" data-card-id="' + id + '" role="switch" aria-checked="' + (on ? "true" : "false") + '">' +
         '<span class="toggle-switch-thumb"></span>' +
