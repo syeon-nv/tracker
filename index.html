@@ -2470,7 +2470,7 @@
   // "__APP_VERSION__"을 그대로 찾아 바꾸는 단순 치환 스크립트가 이 판별용
   // 값까지 함께 바꿔버리는 일이 없도록 한다(그러면 항상 placeholder로
   // 오판되어 업데이트 감지가 영영 꺼져버린다).
-  var APP_VERSION = "1.1.1";
+  var APP_VERSION = "__APP_VERSION__";
   var APP_VERSION_PLACEHOLDER = "__APP_" + "VERSION__";
   var APP_VERSION_STORAGE_KEY = "angle-quest-app-version";
   // 화면 하단(사이드바)에 표시할 버전 문자열. 빌드 치환이 안 된 원본 파일을 그대로
@@ -4005,15 +4005,29 @@
     bar.style.top = top + "px";
     bar.style.left = left + "px";
   }
+  // textarea.value를 직접 덮어쓰면 브라우저가 그 텍스트 영역의 실행취소(Ctrl+Z)
+  // 기록을 통째로 비워버린다 — 그래서 서식 버튼을 한 번이라도 누르면 그 전까지
+  // 타이핑한 내용을 더 이상 Ctrl+Z로 되돌릴 수 없게 된다. execCommand의
+  // "insertText"는(타이핑처럼) 실행취소 기록에 올라가는 진짜 편집으로 처리되니,
+  // 이 방식이 될 때는 이걸 쓰고, 안 되는 환경에서만 직접 대입으로 대체한다.
+  function replaceTextareaRange(textarea, start, end, newText) {
+    textarea.focus();
+    textarea.setSelectionRange(start, end);
+    var usedExecCommand = false;
+    try {
+      usedExecCommand = document.execCommand("insertText", false, newText);
+    } catch (e) { usedExecCommand = false; }
+    if (!usedExecCommand || textarea.value.substring(start, start + newText.length) !== newText) {
+      var value = textarea.value;
+      textarea.value = value.substring(0, start) + newText + value.substring(end);
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
   function wrapTextareaSelection(textarea, before, after) {
     var start = textarea.selectionStart, end = textarea.selectionEnd;
-    var value = textarea.value;
-    var selected = value.substring(start, end);
-    var newValue = value.substring(0, start) + before + selected + after + value.substring(end);
-    textarea.value = newValue;
-    textarea.selectionStart = start + before.length;
-    textarea.selectionEnd = start + before.length + selected.length;
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    var selected = textarea.value.substring(start, end);
+    replaceTextareaRange(textarea, start, end, before + selected + after);
+    textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
     textarea.focus();
   }
   function applyMdFormat(textarea, type) {
@@ -4024,16 +4038,12 @@
   }
   function applyMdLink(textarea) {
     var start = textarea.selectionStart, end = textarea.selectionEnd;
-    var value = textarea.value;
-    var selected = value.substring(start, end) || tr("링크");
+    var selected = textarea.value.substring(start, end) || tr("링크");
     var placeholder = "https://";
     var inserted = "[" + selected + "](" + placeholder + ")";
-    var newValue = value.substring(0, start) + inserted + value.substring(end);
-    textarea.value = newValue;
+    replaceTextareaRange(textarea, start, end, inserted);
     var urlStart = start + selected.length + 3;
-    textarea.selectionStart = urlStart;
-    textarea.selectionEnd = urlStart + placeholder.length;
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    textarea.setSelectionRange(urlStart, urlStart + placeholder.length);
     textarea.focus();
     positionMdToolbar(textarea);
   }
@@ -4052,12 +4062,9 @@
       "| --- | --- |\n" +
       "| " + tr("내용1") + " | " + tr("내용2") + " |" +
       (needsTrailingNewline ? "\n" : "");
-    var newValue = value.substring(0, start) + table + value.substring(end);
-    textarea.value = newValue;
+    replaceTextareaRange(textarea, start, end, table);
     var firstCellStart = start + (needsLeadingNewline ? 1 : 0) + 2;
-    textarea.selectionStart = firstCellStart;
-    textarea.selectionEnd = firstCellStart + headerLabel1.length;
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    textarea.setSelectionRange(firstCellStart, firstCellStart + headerLabel1.length);
     textarea.focus();
     positionMdToolbar(textarea);
   }
@@ -8119,6 +8126,21 @@
   });
 
   document.addEventListener("dragend", function () {
+    // 이 앱이 직접 관리하는 드래그(카드/탭 순서 바꾸기 등)가 하나도 진행 중이
+    // 아니었다면 그냥 무시한다. 이 가드가 없으면, 텍스트 영역 안에서 글자를
+    // 드래그로 선택하다가 마우스가 영역 밖으로 나가는 것 같은 "브라우저가
+    // 자체적으로 처리하는" 드래그에도 dragend가 document까지 올라와서 매번
+    // render()가 실행됐다 — 화면 전체를 state 기준으로 다시 그리면서 방금
+    // 입력 중이던 텍스트 영역도 새로 만들어져, 커서/선택 위치가 날아가고
+    // 마치 이전 내용으로 되돌아간 것처럼 보이는 원인이었다.
+    if (
+      !draggedDiarySidebarCardId && !draggedChecklistSidebarCardId && !draggedDeadlineId &&
+      !draggedNavId && !draggedCardId && !draggedRowId && !draggedImageIndex && !draggedSettingsCardId &&
+      !draggedSettingsTabId && !draggedGradientSlot && !draggedPortfolioPageCardId &&
+      !draggedGoalStepTabId && !draggedGoalStepEntryId
+    ) {
+      return;
+    }
     draggedDiarySidebarCardId = null;
     dragOverDiarySidebarCardEl = null;
     draggedChecklistSidebarCardId = null;

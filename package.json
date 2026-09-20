@@ -1,6 +1,6 @@
 {
   "name": "tracker",
-  "version": "1.1.1",
+  "version": "1.0.0",
   "description": "앵글 퀘스트 - 다양한 앵글 드로잉 연습 트래커",
   "main": "main.js",
   "author": "leti",
