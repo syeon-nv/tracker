@@ -2470,7 +2470,7 @@
   // "__APP_VERSION__"을 그대로 찾아 바꾸는 단순 치환 스크립트가 이 판별용
   // 값까지 함께 바꿔버리는 일이 없도록 한다(그러면 항상 placeholder로
   // 오판되어 업데이트 감지가 영영 꺼져버린다).
-  var APP_VERSION = "1.1.1";
+  var APP_VERSION = "__APP_VERSION__";
   var APP_VERSION_PLACEHOLDER = "__APP_" + "VERSION__";
   var APP_VERSION_STORAGE_KEY = "angle-quest-app-version";
   // 화면 하단(사이드바)에 표시할 버전 문자열. 빌드 치환이 안 된 원본 파일을 그대로
@@ -2801,7 +2801,8 @@
       var label = typeof t.label === "string" ? t.label : "";
       var minutes = typeof t.minutes === "number" && t.minutes >= 0 ? t.minutes : 0;
       var reminder = typeof t.reminder === "string" && /^\d{2}:\d{2}$/.test(t.reminder) ? t.reminder : null;
-      out.push({ id: id, label: label, minutes: minutes, reminder: reminder });
+      var createdAt = typeof t.createdAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t.createdAt) ? t.createdAt : null;
+      out.push({ id: id, label: label, minutes: minutes, reminder: reminder, createdAt: createdAt });
     }
     return out.length ? out : cloneDefaultTasks();
   }
@@ -3740,10 +3741,17 @@
     if (weekMemoSaveTimer) clearTimeout(weekMemoSaveTimer);
     weekMemoSaveTimer = setTimeout(function () { saveState(); }, 400);
   }
+  // 특정 날짜(dateKey) 기준으로 "그 날짜에 존재했던" 일일 체크 항목만 돌려준다.
+  // createdAt이 없는 기존 항목(마이그레이션 이전 데이터)은 항상 포함시켜서
+  // 과거 기록이 깨지지 않게 한다.
+  function dailyTasksForDate(dateKey) {
+    return state.dailyTasks.filter(function (t) { return !t.createdAt || t.createdAt <= dateKey; });
+  }
   function dayTasksDone(dateKey) {
-    if (!state.dailyTasks.length) return false;
+    var tasks = dailyTasksForDate(dateKey);
+    if (!tasks.length) return false;
     var log = state.dailyLog[dateKey] || {};
-    return state.dailyTasks.every(function (t) { return !!log[t.id]; });
+    return tasks.every(function (t) { return !!log[t.id]; });
   }
   function currentStreak() {
     if (!state.dailyTasks.length) return 0;
@@ -4092,11 +4100,12 @@
       d.setDate(d.getDate() - i);
       var key = todayStr(d);
       var log = state.dailyLog[key] || {};
-      var doneCount = state.dailyTasks.filter(function (t) { return log[t.id]; }).length;
+      var tasksForDay = dailyTasksForDate(key);
+      var doneCount = tasksForDay.filter(function (t) { return log[t.id]; }).length;
       var cls = "empty";
-      if (doneCount >= state.dailyTasks.length) cls = "full";
+      if (tasksForDay.length && doneCount >= tasksForDay.length) cls = "full";
       else if (doneCount > 0) cls = "partial";
-      out.push('<span class="daydot ' + cls + '" title="' + key + " · " + doneCount + "/" + state.dailyTasks.length + '"></span>');
+      out.push('<span class="daydot ' + cls + '" title="' + key + " · " + doneCount + "/" + tasksForDay.length + '"></span>');
     }
     return out.join("");
   }
@@ -4114,10 +4123,11 @@
     for (var day = 1; day <= lastDay; day++) {
       var key = y + "-" + pad(m + 1) + "-" + pad(day);
       var log = state.dailyLog[key];
-      var doneCount = log ? state.dailyTasks.filter(function (t) { return !!log[t.id]; }).length : 0;
+      var tasksForDay = dailyTasksForDate(key);
+      var doneCount = log ? tasksForDay.filter(function (t) { return !!log[t.id]; }).length : 0;
       if (doneCount > 0) {
         practiced++;
-        if (doneCount >= state.dailyTasks.length) full++;
+        if (tasksForDay.length && doneCount >= tasksForDay.length) full++;
       }
     }
     return { total: total, lastDay: lastDay, practiced: practiced, full: full };
@@ -4166,7 +4176,8 @@
       var isSunday = i % 7 === 0;
       var holidayName = getHolidayInfo(key);
       var log = state.dailyLog[key];
-      var doneTasks = log ? state.dailyTasks.filter(function (t) { return !!log[t.id]; }) : [];
+      var dailyTasksThisDay = dailyTasksForDate(key);
+      var doneTasks = log ? dailyTasksThisDay.filter(function (t) { return !!log[t.id]; }) : [];
       var diaryEntry = state.diary[key];
       var hasDiary = !!(diaryEntry && ((diaryEntry.text && diaryEntry.text.trim()) || (diaryEntry.images && diaryEntry.images.length)));
       var isSelected = (compact && key === diarySelectedDate) || (isChecklist && key === checklistSelectedDate);
@@ -4182,7 +4193,7 @@
       // 다르면 칸 높이도 자연히 달라지는데, 이건 의도된 것. 다 체크된 날엔 일기 아이콘
       // 옆에 다이아(반짝임) 표시만 인라인으로 두고, 아직 남은 개수("+n")는 윗줄이 아니라
       // 데일리 체크리스트 칩들 아래쪽에 둔다.
-      var allTasksDone = state.dailyTasks.length > 0 && doneTasks.length === state.dailyTasks.length;
+      var allTasksDone = dailyTasksThisDay.length > 0 && doneTasks.length === dailyTasksThisDay.length;
       // 그 날의 규칙적인 일정(오늘의 일정)이 하나 이상 있고 전부 체크됐으면 별 아이콘을,
       // 마감 일정이 하나 이상 있고 전부 체크됐으면 원형 아이콘을 일기 아이콘 옆에 띄운다.
       var recurringForBadge = dueTasks.filter(function (t) { return t.recurring; });
@@ -4206,18 +4217,18 @@
       // 매일 계속 보여주지만, 일기 사이드바의 작은 달력은 그 날 실제로 뭔가 체크한
       // 적이 있을 때만(doneTasks.length > 0) 보여준다 — 안 그러면 한 번도 열어보지
       // 않은 날까지 전부 "3개 남음"으로 표시돼서 지저분해진다.
-      if (state.dailyTasks.length > 0 && (!compact || doneTasks.length > 0)) {
-        var dailyRemaining = state.dailyTasks.length - doneTasks.length;
+      if (dailyTasksThisDay.length > 0 && (!compact || doneTasks.length > 0)) {
+        var dailyRemaining = dailyTasksThisDay.length - doneTasks.length;
         tagsHtml += dailyRemaining === 0
-          ? '<span class="cal-done-mark cal-done-mark-daily cal-done-mark-daily-star" title="' + state.dailyTasks.length + "/" + state.dailyTasks.length + " " + tr("완료") + "\" aria-hidden=\"true\"></span>"
-          : '<span class="cal-done-mark cal-done-mark-daily" title="' + doneTasks.length + "/" + state.dailyTasks.length + " " + tr("완료") + "\">+" + dailyRemaining + "</span>";
+          ? '<span class="cal-done-mark cal-done-mark-daily cal-done-mark-daily-star" title="' + dailyTasksThisDay.length + "/" + dailyTasksThisDay.length + " " + tr("완료") + "\" aria-hidden=\"true\"></span>"
+          : '<span class="cal-done-mark cal-done-mark-daily" title="' + doneTasks.length + "/" + dailyTasksThisDay.length + " " + tr("완료") + "\">+" + dailyRemaining + "</span>";
       }
       var chipsHtml;
       // 체크리스트 달력에서는 그 날 마감/반복 일정이 하나도 없어도, 데일리 체크리스트
       // 항목이 있으면 그 진행 상황을 계속 보여준다(마감이 있는 날만 보이면 매일 하는
       // 습관 체크가 빠진 날처럼 보여서 헷갈린다). 다이어리 사이드바의 작은 달력은
       // 원래 목적대로 마감/반복 일정 표시만 남긴다.
-      var hasAnythingToShow = dueTasks.length || (isChecklist && !compact && state.dailyTasks.length);
+      var hasAnythingToShow = dueTasks.length || (isChecklist && !compact && dailyTasksThisDay.length);
       if (!hasAnythingToShow) {
         chipsHtml = "";
       } else if (compact) {
@@ -4361,7 +4372,7 @@
       var isFutureDay = key > todayKey;
       var isSelected = key === checklistSelectedDate;
       var log = state.dailyLog[key] || {};
-      var dailyItemsHtml = state.dailyTasks.map(function (t) {
+      var dailyItemsHtml = dailyTasksForDate(key).map(function (t) {
         var done = !!log[t.id];
         return (
           '<li class="task week-col-task' + (done ? " done" : "") + '">' +
@@ -4531,7 +4542,7 @@
     var todayKey = todayStr();
     var isToday = dateKey === todayKey;
     var log = state.dailyLog[dateKey] || {};
-    var dailyItemsHtml = state.dailyTasks.map(function (t) {
+    var dailyItemsHtml = dailyTasksForDate(dateKey).map(function (t) {
       var done = !!log[t.id];
       return (
         '<li class="task ' + (done ? "done" : "") + '">' +
@@ -5299,7 +5310,7 @@
     var target = diarySelectedDate;
     var isToday = target === todayStr();
     var log = state.dailyLog[target] || {};
-    var itemsHtml = state.dailyTasks.map(function (t) {
+    var itemsHtml = dailyTasksForDate(target).map(function (t) {
       var done = !!log[t.id];
       return (
         '<li class="task ' + (done ? "done" : "") + '">' +
@@ -8669,7 +8680,10 @@
       var reminderVal = reminderEl && reminderEl.value ? reminderEl.value : null;
       state.dailyTasks.push({
         id: "custom-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        label: val, minutes: 0, reminder: reminderVal
+        label: val, minutes: 0, reminder: reminderVal,
+        // 이 항목이 등록된 날짜. 달력/스트릭 계산에서 이 날짜 이전 과거에는
+        // 이 항목이 표시되지 않도록 하는 기준값이다.
+        createdAt: todayStr()
       });
       if (reminderEl) reminderEl.value = "";
       saveState();
