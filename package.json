@@ -1,7 +1,7 @@
 {
   "name": "tracker",
-  "version": "1.1.3",
-  "description": "앵글 퀘스트 - 다양한 앵글 드로잉 연습 트래커",
+  "version": "1.0.0",
+  "description": "Tracker - 매일을 기록하는 연습장",
   "main": "main.js",
   "author": "leti",
   "license": "UNLICENSED",

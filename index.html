@@ -2470,7 +2470,7 @@
   // "__APP_VERSION__"을 그대로 찾아 바꾸는 단순 치환 스크립트가 이 판별용
   // 값까지 함께 바꿔버리는 일이 없도록 한다(그러면 항상 placeholder로
   // 오판되어 업데이트 감지가 영영 꺼져버린다).
-  var APP_VERSION = "1.1.3";
+  var APP_VERSION = "__APP_VERSION__";
   var APP_VERSION_PLACEHOLDER = "__APP_" + "VERSION__";
   var APP_VERSION_STORAGE_KEY = "angle-quest-app-version";
   // 화면 하단(사이드바)에 표시할 버전 문자열. 빌드 치환이 안 된 원본 파일을 그대로
@@ -2660,12 +2660,11 @@
     for (var i = 0; i < list.length; i++) {
       var s = list[i];
       if (!s || typeof s !== "object") continue;
-      // 기간(시작일/종료일)은 둘 다 있어야 "기간이 있는" 일정으로 취급하고, 하나라도
-      // 없으면 종료일 없이 계속 반복되는 일정으로 저장한다(저장/불러오기 후에도 유지되어야 함).
-      var startDateRaw = typeof s.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.startDate) ? s.startDate : null;
-      var endDateRaw = typeof s.endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.endDate) ? s.endDate : null;
-      var startDate = (startDateRaw && endDateRaw) ? startDateRaw : null;
-      var endDate = (startDateRaw && endDateRaw) ? endDateRaw : null;
+      // 시작일과 종료일은 각각 따로 있어도 된다 — 시작일만 있으면 그 날짜부터 종료일
+      // 없이 계속 반복되는 일정으로, 종료일만 있으면 그 날짜까지만(시작 제한 없이)
+      // 반복되는 일정으로 저장한다.
+      var startDate = typeof s.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.startDate) ? s.startDate : null;
+      var endDate = typeof s.endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.endDate) ? s.endDate : null;
       var entries = Array.isArray(s.entries) ? s.entries.map(function (en) {
         if (!en || typeof en !== "object") return null;
         var weekday = typeof en.weekday === "number" && en.weekday >= 0 && en.weekday <= 6 ? en.weekday : null;
@@ -5548,8 +5547,15 @@
 
   function recurringScheduleSummaryHtml(s) {
     if (editingRecurringScheduleId === s.id) return renderRecurringEditRow(s);
+    var shortDate = function (d) { return d.slice(5).replace("-", "."); };
+    // 시작일/종료일 중 하나만 있을 수도 있으니(시작일만 지정 = 그 날짜부터 계속 반복,
+    // 종료일만 지정 = 그 날짜까지만) 각각 따로 표시한다.
     var range = (s.startDate && s.endDate)
-      ? (s.startDate.slice(5).replace("-", ".") + " ~ " + s.endDate.slice(5).replace("-", "."))
+      ? (shortDate(s.startDate) + " ~ " + shortDate(s.endDate))
+      : s.startDate
+      ? (shortDate(s.startDate) + " ~")
+      : s.endDate
+      ? ("~ " + shortDate(s.endDate))
       : tr("기간 없음");
     var entriesHtml = s.entries.map(function (en) {
       return '<span class="recurring-entry-chip">' + (APP_LANG === "en" ? WEEKDAY_FULL_EN[en.weekday] : WEEKDAY_LABELS[en.weekday] + tr("요일")) + " · " + escapeHtml(en.label) + "</span>";
@@ -5789,11 +5795,11 @@
       var startVal = startEl ? startEl.value : "";
       var endVal = endEl ? endEl.value : "";
       var labelVal = labelEl ? labelEl.value.trim() : "";
-      // 기간 날짜를 둘 다 채운 경우에만 기간이 있는 일정으로 저장하고, 비워두면
-      // 종료일 없는(항상 반복되는) 일정으로 저장한다.
-      var hasPeriod = !!(startVal && endVal);
-      // 시작일이 종료일보다 늦으면 두 값을 서로 바꿔서 저장한다.
-      if (hasPeriod && startVal > endVal) {
+      // 시작일/종료일은 각각 따로 채워도 그대로 저장한다 — 시작일만 채우면 그 날짜부터
+      // 종료일 없이 계속 반복되는 일정으로, 종료일만 채우면 시작 제한 없이 그 날짜까지만
+      // 반복되는 일정으로 저장한다. 둘 다 채운 경우에만 시작일이 종료일보다 늦으면
+      // 두 값을 서로 바꿔서 저장한다.
+      if (startVal && endVal && startVal > endVal) {
         var swapTmp = startVal;
         startVal = endVal;
         endVal = swapTmp;
@@ -5804,7 +5810,7 @@
         });
         state.recurringSchedules = (state.recurringSchedules || []).concat([{
           id: "recur-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          startDate: hasPeriod ? startVal : null, endDate: hasPeriod ? endVal : null,
+          startDate: startVal || null, endDate: endVal || null,
           entries: entries, color: pendingRecurringAddColor || DEFAULT_RECURRING_DOT_COLOR,
           reminderTime: pendingRecurringReminderTime || null,
           exceptions: pendingRecurringExceptions.slice()
@@ -5843,15 +5849,14 @@
       var endVal = endEl ? endEl.value : "";
       var labelVal = labelEl ? labelEl.value.trim() : "";
       if (!labelVal || !editRecurringWeekdays.length) return;
-      var hasPeriod = !!(startVal && endVal);
-      // 시작일이 종료일보다 늦으면 두 값을 서로 바꿔서 저장한다.
-      if (hasPeriod && startVal > endVal) {
+      // 시작일/종료일은 각각 따로 채워도 그대로 저장한다(추가 폼과 동일한 규칙).
+      if (startVal && endVal && startVal > endVal) {
         var swapTmp = startVal;
         startVal = endVal;
         endVal = swapTmp;
       }
-      s.startDate = hasPeriod ? startVal : null;
-      s.endDate = hasPeriod ? endVal : null;
+      s.startDate = startVal || null;
+      s.endDate = endVal || null;
       s.entries = editRecurringWeekdays.slice().sort().map(function (wd) {
         return { weekday: wd, label: labelVal };
       });
